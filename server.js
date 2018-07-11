@@ -1,21 +1,21 @@
 'use strict';
 
-var express     = require('express');
-var bodyParser  = require('body-parser');
-var expect      = require('chai').expect;
-var cors        = require('cors');
+const express     = require('express');
+const bodyParser  = require('body-parser');
+const expect      = require('chai').expect;
+const cors        = require('cors');
+const helmet      = require('helmet');
 
-var apiRoutes         = require('./routes/api.js');
-var fccTestingRoutes  = require('./routes/fcctesting.js');
-var runner            = require('./test-runner');
+const apiRoutes         = require('./routes/api.js');
+const fccTestingRoutes  = require('./routes/fcctesting.js');
+const runner            = require('./test-runner');
 
-var app = express();
+const app = express();
+
+app.use(helmet.xssFilter());
 
 app.use('/public', express.static(process.cwd() + '/public'));
-
 app.use(cors({origin: '*'})); //For FCC testing purposes only
-
-
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -53,8 +53,7 @@ app.listen(process.env.PORT || 3000, function () {
     setTimeout(function () {
       try {
         runner.run();
-      } catch(e) {
-        var error = e;
+      } catch(error) {
           console.log('Tests are not valid:');
           console.log(error);
       }
