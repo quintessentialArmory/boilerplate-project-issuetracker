@@ -9,18 +9,19 @@
 'use strict';
 
 const expect = require('chai').expect;
-const MongoClient = require('mongodb');
-const ObjectId = require('mongodb').ObjectID;
+const MongoClient = require('mongodb').MongoClient;
+const ObjectID = require('mongodb').ObjectID;
 
-module.exports = function (app) {
-
+module.exports = function (app, done) {
     MongoClient.connect(process.env.DB, function (error, connection) {
-        const db = connection.db();
+        if (error) throw error;
+        const db = connection.db("tremendous-attack");
         app.route('/api/issues/:project')
             .get(getHandler(db))
             .post(postHandler(db))
             .put(putHandler(db))
             .delete(deleteHandler(db));
+        done();
     });
 };
 
@@ -45,7 +46,7 @@ const getHandler = db => (req, res) => {
     };
     const opts = {
         projection: {'project_name': 0},
-        sort: [['created_on': 1]],
+        sort: [['created_on', 1]],
     };
 
     let resultCount = req.query.limit;
@@ -75,8 +76,8 @@ const postHandler = db => (req, res) => {
     if (!req.body.issue_title ||
         !req.body.issue_text ||
         !req.body.created_by) {
-        res.status(403).send('missing required input data'+
-            ' (issue_title, issue_text or created_by)');
+        const text = 'issue_title, issue_text and created_by are required';
+        res.status(403).send(text);
         return
     }
     const issue = {
@@ -96,7 +97,8 @@ const postHandler = db => (req, res) => {
             res.status(500).send('error while saving issue');
             return
         }
-        issue._id = doc._id;
+        issue._id = doc.insertedId;
+        delete issue.project_name;
         res.json(issue);
     });
 }
